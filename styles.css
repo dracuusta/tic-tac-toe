@@ -1,0 +1,24 @@
+.gameBoard{
+    display: grid;
+    height: 60vh;
+    width: 60vw;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    margin-top:100px;
+    margin-left: 300px;
+}
+
+.item{
+    border: solid black 1px;
+    padding:25px;
+    text-align: center;
+    vertical-align: middle;
+    line-height: 10vh;
+    font-size: xx-large;
+
+}
+
+.btns{
+    margin-top: 20px;
+    margin-left:45vw;
+}
