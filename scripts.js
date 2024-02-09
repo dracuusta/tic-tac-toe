@@ -1,16 +1,4 @@
 
-
-
-// const readline=require('readline').createInterface({
-//     input:process.stdin,
-//     output: process.stdout
-// })
-
-
-  
-
-
-
 const gameboard=(function(){
     let board=[];
     function initialize_board(){
@@ -78,7 +66,7 @@ const gameboard=(function(){
         if((board[0][2]==board[1][1])&&(board[1][1]===board[2][0])&&(board[2][0]===player.operator)){
             Right_Diagonal_validator=true;
         }
-        return Horizontal_validator||Vertical_validator||Diagonal_validator||Right_Diagonal_validator;
+        return Horizontal_validator||Vertical_validator||Left_Diagonal_validator||Right_Diagonal_validator;
     }
     return {initialize_board,getBoard,markBoard,clearBoard,checkBoard};
 })();
@@ -101,51 +89,68 @@ function createPlayer(operator){
     return {operator, getXPosition,getYPosition, updatePosition};
 }
 
-
-
-const game=(function(){
-
-
-function askMove(player, turn, player1, player2,x,y)
-    {
-    const currPlayer=turn%2?'1':'2';
-    player.updatePosition(x,y);
-    gameboard.markBoard(player);
-    if(gameboard.checkBoard(player)){
-        console.log(`Player ${currPlayer} Wins`);
+const game=(()=>{
+    let currentPlayer;
+    let turn;
+    let player1;
+    let player2;
+    function toggleCurrentPlayer(){
+        if(currentPlayer===0){
+            currentPlayer=1;
+        }
+        else{
+            currentPlayer=0;
+        }
     }
-    else if(turn>=8)
-    {
-        console.log(`No result-> Draw`);
-    }
-    else{
-        askMove()
+    
+
+    function start(event) {
+        gameboard.initialize_board();
+        display.renderBoard();
+        let buttonDivs=document.querySelectorAll('.item');
+console.log(buttonDivs);
+buttonDivs.forEach((button)=>{button.addEventListener('click',game.gameController)});
+        turn=0;
+        currentPlayer=0;
+        player1=createPlayer("X");
+        player2=createPlayer("O");
     }
 
+    function gameController(event){
+        let elementId=event.target.id.slice(-2);
+        let x=parseInt(elementId[0]);
+        let y=parseInt(elementId[1]);
+        game.makeMove(x,y,event);
+    }
 
-    // readline.question(`Player ${currPlayer}, enter your move(row, col) `,(input)=>{
-    //     const [a, b]=input.split(',').map(Number);
-    //     player.updatePosition(a,b);
-    //     gameboard.markBoard(player);
-    //     if(gameboard.checkBoard(player)){
-    //         console.log(`Player ${currPlayer} Wins`);
-    //         readline.close();
-    //     }
-    //     else if(turn>=8){
-    //         console.log(`No result-> Draw`);
-    //     }
-    //     else{
-    //         askMove(turn%2==0?player2:player1,turn+1,player1,player2);
-    //     }
-    // });
+    function makeMove(x,y,event){
+        let tempPlayer;
+        if (currentPlayer === 0) {
+            player1.updatePosition(x, y);
+            tempPlayer=player1;
+        } else {
+            player2.updatePosition(x, y);
+            tempPlayer=player2;
+        }
+        gameboard.markBoard(tempPlayer);
+        event.target.innerText=tempPlayer.operator;
+        if(gameboard.checkBoard(tempPlayer)===true)
+        {
+            display.renderWin(tempPlayer);
+        }
+        else if(turn>=8)
+        {
+            display.renderDraw();
+        }
+        else{
+            turn++;
+            toggleCurrentPlayer();
+        }
 }
-function createGame() {
-    const player1 = createPlayer("X");
-    const player2 = createPlayer("O");
+return {start,gameController,makeMove}
+})();
 
-    gameboard.initialize_board();
-    askMove(player1, 0, player1, player2); // Start the game with player1 and pass both players for alternation
-}})();
+
 
 const display=(()=>{
     function renderBoard(){
@@ -156,23 +161,42 @@ const display=(()=>{
         {
             for(let j=0;j<3;j++)
             {
-                board[i][j]="X";
                 gameboardDiv.innerHTML+=`<div class="item" id="item${i}${j}"></div>`;
             }
         }
     }
 
-    function addMark(){
-        const btnsDiv=document.querySelectorAll('.item');
-        btnsDiv.forEach((button)=>{
-            button.addEventListener('click',function updatePostion() {
-                let elementId=e.target.id.slice(-2);
-                let row=parseInt(elementId[0]);
-                let col=parseInt(elementId[1]);
-                return [row ,col];
-            })
-        })
+    function reRenderBoard(){
+        gameboard.clearBoard();
+        let gameboardDiv=document.getElementById('gameBoard');
+        gameboardDiv.innerHTML="";
     }
-    return {renderBoard,addMark};
+       
+    function renderWin(player){
+        let container=document.querySelector('.container');
+        let winDiv=document.createElement('div');
+        winDiv.innerText=`Player with operator ${player.operator} wins`;
+        container.append(winDiv);
+    }
+    function renderDraw(player){
+        let container=document.querySelector('.container');
+        let winDiv=document.createElement('div');
+        winDiv.innerText=`It's a draw`;
+        container.append(winDiv);
+    }
+
+    function addRestartEventListener(){
+        const restartDiv=document.getElementById('restart-btn');
+        restartDiv.addEventListener('click',reRenderBoard);
+        restartDiv.addEventListener('click',game.start);
+    }
+
+    function addStartEventListener(){
+        let startDiv=document.getElementById('start-btn');
+        startDiv.addEventListener('click',game.start);
+        display.addRestartEventListener();
+    }
+    return {renderBoard,renderWin,renderDraw,addRestartEventListener,addStartEventListener};
 })();
 
+display.addStartEventListener();
